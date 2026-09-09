@@ -9,6 +9,7 @@ User=oms
 Group=oms
 WorkingDirectory=/opt/open-motion-studio
 EnvironmentFile=/etc/open-motion-studio.env
+EnvironmentFile=-/etc/open-motion-studio-visitor.env
 ExecStart=/usr/bin/node apps/api/index.mjs
 Restart=always
 RestartSec=3

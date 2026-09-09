@@ -1,7 +1,7 @@
 import http from "node:http";
 import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,7 @@ const dataDir = path.resolve(process.env.OMS_DATA_DIR ?? path.join(root, "data")
 const jobsDir = path.join(dataDir, "jobs");
 const artifactsDir = path.join(dataDir, "artifacts");
 const port = Number(process.env.OMS_PORT ?? 3216);
+const visitorSecret = process.env.OMS_VISITOR_SECRET ?? randomBytes(32).toString("hex");
 const jobs = new Map();
 await mkdir(jobsDir, { recursive: true });
 await mkdir(artifactsDir, { recursive: true });
@@ -20,6 +21,29 @@ function send(response, status, payload, headers = {}) {
   const body = typeof payload === "string" ? payload : JSON.stringify(payload);
   response.writeHead(status, { "Content-Type": typeof payload === "string" ? "text/plain; charset=utf-8" : "application/json; charset=utf-8", "Access-Control-Allow-Origin": process.env.OMS_PUBLIC_ORIGIN ?? "*", "Access-Control-Allow-Headers": "content-type", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", ...headers });
   response.end(body);
+}
+
+function visitorCookieValue(visitorId) {
+  const signature = createHmac("sha256", visitorSecret).update(visitorId).digest("base64url");
+  return `${visitorId}.${signature}`;
+}
+
+function visitorIdFromRequest(request) {
+  const raw = request.headers.cookie?.split(";").map((item) => item.trim()).find((item) => item.startsWith("oms_visitor="))?.slice("oms_visitor=".length);
+  if (!raw) return null;
+  const [visitorId, signature] = raw.split(".");
+  if (!visitorId || !signature) return null;
+  const expected = createHmac("sha256", visitorSecret).update(visitorId).digest("base64url");
+  if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  return visitorId;
+}
+
+function ensureVisitor(request, response) {
+  const existing = visitorIdFromRequest(request);
+  if (existing) return existing;
+  const visitorId = `visitor_${randomUUID()}`;
+  response.setHeader("Set-Cookie", `oms_visitor=${visitorCookieValue(visitorId)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=31536000`);
+  return visitorId;
 }
 
 async function readJson(request) {
@@ -39,13 +63,14 @@ const server = http.createServer(async (request, response) => {
   try {
     if (url.pathname === "/health") return send(response, 200, { ok: true, service: "oms-api", sha: process.env.GIT_SHA ?? "local", ffmpeg: "native" });
     if (url.pathname === "/api/render" && request.method === "POST") {
+      const visitorId = ensureVisitor(request, response);
       const body = await readJson(request);
       const errors = validateProject(body.project);
       if (errors.length) return send(response, 422, { errors });
       const active = [...jobs.values()].filter((job) => ["queued", "running"].includes(job.state));
       if (active.length >= 4) return send(response, 429, { error: "Render queue is full." });
       const jobId = randomUUID();
-      const job = { id: jobId, state: "queued", createdAt: new Date().toISOString(), project: body.project };
+      const job = { id: jobId, state: "queued", createdAt: new Date().toISOString(), visitorId, project: body.project };
       jobs.set(jobId, job);
       await writeFile(path.join(jobsDir, `${jobId}.json`), JSON.stringify(job));
       runWorker(jobId);
@@ -61,6 +86,8 @@ const server = http.createServer(async (request, response) => {
         throw error;
       }
       jobs.set(renderMatch[1], job);
+      const visitorId = visitorIdFromRequest(request);
+      if (!visitorId || visitorId !== job.visitorId) return send(response, 403, { error: "Render belongs to another visitor." });
       return send(response, 200, { id: job.id, state: job.state, progress: job.progress ?? 0, mp4Url: job.state === "succeeded" ? `/artifacts/${job.id}.mp4` : undefined, pngUrl: job.state === "succeeded" ? `/artifacts/${job.id}.png` : undefined, error: job.error });
     }
     const artifactMatch = url.pathname.match(/^\/artifacts\/([\w-]+)\.(mp4|png)$/);
