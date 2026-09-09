@@ -13,3 +13,8 @@ These migrations target the existing `kmerhosting` project and create only
 
 P0 routes all data access through the API. No Supabase secret, service-role key,
 or administrative identifier is included in the editor bundle.
+
+Inventory performed on 2026-09-09 against project `kmerhosting`
+(`igihzeyfgwhnuiflamvn`): PostgreSQL 17.6.1, six existing Storage buckets,
+and no existing `oms_*` tables, buckets or functions. The migration deliberately
+does not revoke or replace shared `storage.objects` policies.

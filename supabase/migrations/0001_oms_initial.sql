@@ -81,7 +81,10 @@ insert into storage.buckets (id, name, public)
 values ('oms_assets', 'oms_assets', false)
 on conflict (id) do nothing;
 
-revoke all on storage.objects from anon, authenticated;
+-- Do not revoke or replace policies on storage.objects globally: that table is
+-- shared by unrelated KmerHosting products. P0 accesses this private bucket
+-- through the server-only key and will add bucket-scoped policies in a reviewed
+-- follow-up migration once the existing policy inventory is backed up.
 
 comment on table public.oms_projects is 'Open Motion Studio anonymous projects; access through the signed visitor API only.';
 comment on table public.oms_render_jobs is 'Open Motion Studio durable render job metadata.';
