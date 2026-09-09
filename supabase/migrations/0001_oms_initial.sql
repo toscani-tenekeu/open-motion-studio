@@ -77,6 +77,15 @@ revoke all on public.oms_project_versions from anon, authenticated;
 revoke all on public.oms_assets from anon, authenticated;
 revoke all on public.oms_render_jobs from anon, authenticated;
 
+create policy oms_projects_deny_public on public.oms_projects
+  for all to anon, authenticated using (false) with check (false);
+create policy oms_project_versions_deny_public on public.oms_project_versions
+  for all to anon, authenticated using (false) with check (false);
+create policy oms_assets_deny_public on public.oms_assets
+  for all to anon, authenticated using (false) with check (false);
+create policy oms_render_jobs_deny_public on public.oms_render_jobs
+  for all to anon, authenticated using (false) with check (false);
+
 insert into storage.buckets (id, name, public)
 values ('oms_assets', 'oms_assets', false)
 on conflict (id) do nothing;
