@@ -77,6 +77,14 @@ export const PROJECT_LIMITS: ProjectLimits = {
   maxDuration: 180,
 };
 
+function fallbackUuid(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+    const value = Math.floor(Math.random() * 16);
+    const nibble = character === "x" ? value : (value & 0x3) | 0x8;
+    return nibble.toString(16);
+  });
+}
+
 const dimensions: Record<ProjectSize, [number, number]> = {
   landscape: [1920, 1080],
   square: [1080, 1080],
@@ -84,7 +92,9 @@ const dimensions: Record<ProjectSize, [number, number]> = {
 };
 
 export function createId(prefix: string): string {
-  return `${prefix}_${crypto.randomUUID()}`;
+  const webCrypto = globalThis.crypto;
+  const id = typeof webCrypto?.randomUUID === "function" ? webCrypto.randomUUID() : fallbackUuid();
+  return `${prefix}_${id}`;
 }
 
 export function createDemoProject(): ProjectDocument {
