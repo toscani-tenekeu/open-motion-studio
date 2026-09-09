@@ -1,0 +1,23 @@
+# Deployment record
+
+The current VPS preflight observed public address `84.247.132.49`, Nginx on
+ports 80/443, and a free application candidate port of `3216` before the local
+development server was started. Production should serve the built editor through
+the existing Nginx instance on port 80 and proxy `/api` and `/artifacts` to
+`127.0.0.1:3216`.
+
+This is a deployment target record, not a claim that production installation has
+already been applied. Before enabling it, verify the public IP, Nginx server-name
+collision, filesystem ownership, and the current UFW rules again.
+
+```bash
+sudo useradd --system --home /opt/open-motion-studio --shell /usr/sbin/nologin oms
+sudo install -d -o oms -g oms /opt/open-motion-studio/data
+sudo cp deploy/open-motion-studio.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now open-motion-studio.service
+curl http://127.0.0.1:3216/health
+```
+
+Do not expose 3216 directly when Nginx is available. Keep secrets in
+`/etc/open-motion-studio.env`, never in Git or the browser bundle.

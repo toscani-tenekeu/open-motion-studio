@@ -1,0 +1,22 @@
+[Unit]
+Description=Open Motion Studio API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oms
+Group=oms
+WorkingDirectory=/opt/open-motion-studio
+EnvironmentFile=/etc/open-motion-studio.env
+ExecStart=/usr/bin/node apps/api/index.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/open-motion-studio/data
+
+[Install]
+WantedBy=multi-user.target

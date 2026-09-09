@@ -1,0 +1,8 @@
+{
+  "name": "@open-motion-studio/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "node --watch index.mjs", "start": "node index.mjs", "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@open-motion-studio/document": "file:../../packages/document" }
+}

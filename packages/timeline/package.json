@@ -1,0 +1,11 @@
+{
+  "name": "@open-motion-studio/timeline",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": { "build": "tsc --outDir dist --declaration --declarationMap false --noEmit false", "test": "node --test test/*.test.mjs", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@open-motion-studio/document": "file:../document" },
+  "devDependencies": { "typescript": "5.9.2" }
+}

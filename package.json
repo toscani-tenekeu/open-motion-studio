@@ -1,0 +1,22 @@
+{
+  "name": "open-motion-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run build:packages && concurrently -k \"npm:dev:api\" \"npm:dev:editor\"",
+    "dev:editor": "npm --workspace apps/editor run dev",
+    "dev:api": "npm --workspace apps/api run dev",
+    "build": "npm --workspace apps/editor run build",
+    "build:packages": "npm --workspace packages/document run build && npm --workspace packages/timeline run build",
+    "test": "npm run build:packages && npm run test:packages && npm --workspace apps/api run test",
+    "test:packages": "npm --workspace packages/document run test && npm --workspace packages/timeline run test",
+    "typecheck": "npm --workspace packages/document run typecheck && npm --workspace packages/timeline run typecheck && npm --workspace apps/editor run typecheck",
+    "preflight": "bash scripts/preflight.sh"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1"
+  }
+}
