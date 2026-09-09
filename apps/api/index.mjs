@@ -53,7 +53,13 @@ const server = http.createServer(async (request, response) => {
     }
     const renderMatch = url.pathname.match(/^\/api\/render\/([\w-]+)$/);
     if (renderMatch && request.method === "GET") {
-      const job = JSON.parse(await readFile(path.join(jobsDir, `${renderMatch[1]}.json`), "utf8"));
+      let job;
+      try {
+        job = JSON.parse(await readFile(path.join(jobsDir, `${renderMatch[1]}.json`), "utf8"));
+      } catch (error) {
+        if (error?.code === "ENOENT") return send(response, 404, { error: "Render job not found" });
+        throw error;
+      }
       jobs.set(renderMatch[1], job);
       return send(response, 200, { id: job.id, state: job.state, progress: job.progress ?? 0, mp4Url: job.state === "succeeded" ? `/artifacts/${job.id}.mp4` : undefined, pngUrl: job.state === "succeeded" ? `/artifacts/${job.id}.png` : undefined, error: job.error });
     }
