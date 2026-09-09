@@ -6,7 +6,7 @@ development server was started. Production should serve the built editor through
 the existing Nginx instance on port 80 and proxy `/api` and `/artifacts` to
 `127.0.0.1:3216`.
 
-The P0 deployment was applied on 2026-09-09 from commit `a16a0e9`. The public
+The P0 deployment was applied on 2026-09-09 from commit `7ae1318`. The public
 health endpoint is `http://84.247.132.49/health`. The application service is
 enabled as `open-motion-studio.service`; existing KmerHosting services were not
 stopped or reconfigured.
